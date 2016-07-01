@@ -13,6 +13,9 @@
     <title>Sandbox graph</title>
     <script src="https://raw.githubusercontent.com/anvaka/VivaGraphJS/master/dist/vivagraph.min.js"></script>
         <script type='text/javascript'>
+           var nodeWidth = 180;
+           var nodeHeight = 20;
+           var nodeColor = '#00a233';
          
            function addNodes(graph){
               
@@ -161,9 +164,9 @@ graph.addLink('dilya28', 'vdbv');				graph.addLink('karmashek', 'vdbv');	graph.a
 						.attr('x', '+3px')
 						.text(node.id),
 					rect = Viva.Graph.svg('rect')
-						.attr('width', 90)
-						.attr('height', 20)
-						.attr('fill', node.data ? node.data : '#00a233');
+						.attr('width', nodeWidth)
+						.attr('height', nodeHeight)
+						.attr('fill', node.data ? node.data : nodeColor);
 					ui.append(rect);
 					ui.append(svgText);
 					return ui;
@@ -172,7 +175,7 @@ graph.addLink('dilya28', 'vdbv');				graph.addLink('karmashek', 'vdbv');	graph.a
 					// we have to deal with transforms: http://www.w3.org/TR/SVG/coords.html#SVGGlobalTransformAttribute
 					nodeUI.attr('transform',
 								'translate(' +
-									  (pos.x - 90) + ',' + (pos.y - 20) +
+									  (pos.x - nodeWidth) + ',' + (pos.y - nodeHeight) +
 								')');
 				});
                var renderer = Viva.Graph.View.renderer(graph,
