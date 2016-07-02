@@ -20,7 +20,7 @@
         <![endif]-->
         <title>Sandbox graph</title>
 
-        <script src="https://raw.githubusercontent.com/anvaka/VivaGraphJS/master/dist/vivagraph.min.js"></script>
+        <script src="../javascripts/vivagraph.min.js"></script>
         <script src="https://apis.google.com/js/client.js?onload=checkAuth"></script>
 
         <style type='text/css'>
@@ -63,8 +63,8 @@
             function buildGraph() {
                 var graph = Viva.Graph.graph();
                 var layout = Viva.Graph.Layout.forceDirected(graph, {
-                    springLength: 350,
-                    springCoeff: 0.00001,
+                    springLength: 150,
+                    springCoeff: 0.000005,
                     dragCoeff: 0.003,
                     gravity: -0.8
                 });
