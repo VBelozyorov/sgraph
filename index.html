@@ -30,24 +30,48 @@
                 width: 100%;
                 height: 100%;
             }
+            
             #graphConainer > svg {
                 width: 100%;
                 height: 100%;
             }
+
+            .node-label {
+                  position: absolute;
+                  pointer-events: none;
+                  color: white;
+                  z-index: 10;
+            }
+
+            #top {
+                float: left;
+            }
+
+            #top > * {
+                display: inline-block;
+            }
+
+            #top #panel {
+                color: white;
+            }
+
         </style>
     </head>
 
     <body onload="onLoad()" style="background-color: black;">
+        <div id="top">
+            <div id="panel">Для просмотра графа нужно войти в аккаунт google, ваш браузер мог заблокировать всплывающее окно авторизации</div>
+        </div>
         <div id='graphConainer'></div>
 
-<!--        <div id="authorize-div" style="">
-            <span>Authorize access to Google Sheets API</span>
-            Button for the user to click to initiate auth sequence 
-            <button id="authorize-button" onclick="handleAuthClick(event)">
-                Authorize
-            </button>
-        </div>
-        <pre id="output"></pre>-->
+        <!--        <div id="authorize-div" style="">
+                    <span>Authorize access to Google Sheets API</span>
+                    Button for the user to click to initiate auth sequence
+                    <button id="authorize-button" onclick="handleAuthClick(event)">
+                        Authorize
+                    </button>
+                </div>
+                <pre id="output"></pre>-->
 
         <script type = 'text/javascript' >
             var CLIENT_ID = '857913222632-jqf7gvhgheqkitu9189iib7svv21d2rs.apps.googleusercontent.com';
@@ -56,7 +80,8 @@
 
             var nodeWidth = 100;
             var nodeHeight = 20;
-            var nodeColor = '#00a233';
+            var nodeColors = ['#00a233', '#991212'];
+            var linkColors = ['#606060', '#ffffff'];
 
             document.addEventListener('graph-loaded', buildGraph, false);
 
@@ -68,29 +93,60 @@
                     dragCoeff: 0.003,
                     gravity: -0.8
                 });
-                var graphics = Viva.Graph.View.svgGraphics();
-                graphics.node(function (node) {
-                    var ui = Viva.Graph.svg('g'),
-                            // Create SVG text element with user id as content
-                            svgText = Viva.Graph.svg('text')
-                            .attr('y', '+15px')
-                            .attr('x', '+3px')
-                            .text(node.id),
-                            rect = Viva.Graph.svg('rect')
-                            .attr('width', nodeWidth)
-                            .attr('height', nodeHeight)
-                            .attr('fill', node.data ? node.data : nodeColor);
-                    ui.append(rect);
-                    ui.append(svgText);
-                    return ui;
-                }).placeNode(function (nodeUI, pos) {
-                    // 'g' element doesn't have convenient (x,y) attributes, instead
-                    // we have to deal with transforms: http://www.w3.org/TR/SVG/coords.html#SVGGlobalTransformAttribute
-                    nodeUI.attr('transform',
-                            'translate(' +
-                            (pos.x - nodeWidth) + ',' + (pos.y - nodeHeight) +
-                            ')');
-                });
+
+                var graphics = Viva.Graph.View.webglGraphics();
+
+                graphics
+                        .node(function (node) {
+                            return Viva.Graph.View.webglSquare(25, nodeColors[0]);
+                        })
+                        .link(function (link) {
+                            return Viva.Graph.View.webglLine(link.data ? linkColors[1] : linkColors[0]);
+                        })
+                        .placeNode(function(ui, pos) {
+                            // This callback is called by the renderer before it updates
+                            // node coordinate. We can use it to update corresponding DOM
+                            // label position;
+                            // we create a copy of layout position
+                            var domPos = {
+                                x: pos.x,
+                                y: pos.y
+                            };
+                            // And ask graphics to transform it to DOM coordinates:
+                            graphics.transformGraphToClientCoordinates(domPos);
+                            // then move corresponding dom label to its own position:
+                            var nodeId = ui.node.id;
+                            var labelStyle = domLabels[nodeId].style;
+                            labelStyle.left = domPos.x + 'px';
+                            labelStyle.top = domPos.y + 'px';
+                        })
+                        ;
+
+
+//                graphics.node(function (node) {
+//                    var ui = Viva.Graph.svg('g'),
+//                            // Create SVG text element with user id as content
+//                            svgText = Viva.Graph.svg('text')
+//                            .attr('y', '+15px')
+//                            .attr('x', '+3px')
+//                            .text(node.id),
+//                            rect = Viva.Graph.svg('rect')
+//                            .attr('width', nodeWidth)
+//                            .attr('height', nodeHeight)
+//                            .attr('fill', node.data ? node.data : nodeColor);
+//                    ui.append(rect);
+//                    ui.append(svgText);
+//                    return ui;
+//                }).placeNode(function (nodeUI, pos) {
+//                    // 'g' element doesn't have convenient (x,y) attributes, instead
+//                    // we have to deal with transforms: http://www.w3.org/TR/SVG/coords.html#SVGGlobalTransformAttribute
+//                    nodeUI.attr('transform',
+//                            'translate(' +
+//                            (pos.x - nodeWidth) + ',' + (pos.y - nodeHeight) +
+//                            ')');
+//                });
+
+
                 var renderer = Viva.Graph.View.renderer(graph,
                         {
                             layout: layout,
@@ -98,12 +154,27 @@
                             container: document.getElementById('graphConainer'),
                             renderLinks: true
                         });
+
+                var events = Viva.Graph.webglInputEvents(graphics, graph);
+                events.mouseEnter(function (node) {
+//                    console.log('Mouse entered node: ' + node.id);
+                    document.getElementById('panel').innerHTML = node.id;
+                }).mouseLeave(function (node) {
+//                    console.log('Mouse left node: ' + node.id);
+                }).dblClick(function (node) {
+//                    console.log('Double click on node: ' + node.id);
+                }).click(function (node) {
+//                    console.log('Single click on node: ' + node.id);
+
+                });
+
                 renderer.run(50);
 
                 window.vgraph = graph;
 
                 addNodes(graph, window.nodes);
                 addLinks(graph, window.links);
+                var domLabels = generateDOMLabels(graph);
 
                 l = layout;
             }
@@ -116,7 +187,7 @@
                     for (var i in nodes) {
                         graph.addNode(nodes[i]);
                     }
-                    
+
                     graph.endUpdate();
                 }, 100);
             }
@@ -125,10 +196,27 @@
                 graph.beginUpdate();
 
                 for (var i in links) {
-                    graph.addLink(links[i][0], links[i][1]);
+                    graph.addLink(links[i][0], links[i][1], false);
                 }
 
                 graph.endUpdate();
+            }
+
+            function generateDOMLabels(graph) {
+                  // this will map node id into DOM element
+                  var labels = Object.create(null);
+                  var container = document.body;
+
+                  graph.forEachNode(function(node) {
+                    var label = document.createElement('span');
+                    label.classList.add('node-label');
+                    label.innerText = node.id;
+                    labels[node.id] = label;
+                    container.appendChild(label);
+                  });
+                  // NOTE: If your graph changes over time you will need to
+                  // monitor graph changes and update DOM elements accordingly
+                  return labels;
             }
 
             function onLoad() {
@@ -140,7 +228,7 @@
 
                 checkAuth();
 
-                
+
             }
 
             /******************************************************************/
@@ -164,6 +252,7 @@
              */
             function handleAuthResult(authResult) {
                 if (authResult && !authResult.error) {
+                    document.getElementById('top').innerHTML = '';
                     loadSheetsApi();
                 } else {
                     handleAuthClick(null);
