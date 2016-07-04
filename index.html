@@ -207,12 +207,10 @@
                   var container = document.body;
 
                   graph.forEachNode(function(node) {
-                      
-                    console.log(['building', node]);
-                      
                     var label = document.createElement('span');
                     label.classList.add('node-label');
                     label.innerText = node.data;
+                    console.log(['text', node, node.data]);
                     labels[node.id] = label;
                     container.appendChild(label);
                   });
