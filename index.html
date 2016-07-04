@@ -157,7 +157,7 @@
                 var events = Viva.Graph.webglInputEvents(graphics, graph);
                 events.mouseEnter(function (node) {
 //                    console.log('Mouse entered node: ' + node.id);
-                    document.getElementById('panel').innerHTML = node.id;
+                    //document.getElementById('panel').innerHTML = node.id;
                 }).mouseLeave(function (node) {
 //                    console.log('Mouse left node: ' + node.id);
                 }).dblClick(function (node) {
@@ -184,7 +184,7 @@
                     graph.beginUpdate();
 
                     for (var i in nodes) {
-                        graph.addNode(nodes[i].toLowercase(), nodes[i]);
+                        graph.addNode(nodes[i].toLowerCase(), nodes[i]);
                     }
 
                     graph.endUpdate();
