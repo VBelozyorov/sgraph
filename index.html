@@ -110,7 +110,7 @@
                             // then move corresponding dom label to its own position:
                             var nodeId = ui.node.id;
                             
-                            console.log(nodeId);
+                            console.log([nodeId, window.domLabels[nodeId]]);
                             
                             var labelStyle = window.domLabels[nodeId].style;
                             labelStyle.left = domPos.x - 5  + 'px';
