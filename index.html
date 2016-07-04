@@ -184,7 +184,7 @@
                     graph.beginUpdate();
 
                     for (var i in nodes) {
-                        graph.addNode(nodes[i]);
+                        graph.addNode(nodes[i].toLowercase(), nodes[i]);
                     }
 
                     graph.endUpdate();
@@ -209,7 +209,7 @@
                   graph.forEachNode(function(node) {
                     var label = document.createElement('span');
                     label.classList.add('node-label');
-                    label.innerText = node.id;
+                    label.innerText = node.data;
                     labels[node.id] = label;
                     container.appendChild(label);
                   });
@@ -298,7 +298,7 @@
 
                         for (var col = 2; col < d[row].length; col++) {
                             if (d[row][col] === "1")
-                                window.links.push([d[0][col].toLowerCase(), d[row][0]]);
+                                window.links.push([d[0][col].toLowerCase(), d[row][0].toLowerCase()]);
                         }
                     }
                     var event = new Event('graph-loaded');
