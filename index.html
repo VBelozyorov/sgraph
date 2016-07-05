@@ -84,7 +84,8 @@
                     springLength: 150,
                     springCoeff: 0.000005,
                     dragCoeff: 0.003,
-                    gravity: -0.8
+                    gravity: -0.3
+
                 });
 
                 var graphics = Viva.Graph.View.webglGraphics();
@@ -111,7 +112,7 @@
                             var nodeId = ui.node.id;
                             
                             if (undefined == window.domLabels[nodeId]) {
-                                console.log([nodeId, window.domLabels[nodeId]]);
+                                console.error([nodeId, window.domLabels[nodeId]]);
                                 return;
                             }
                             
@@ -180,15 +181,13 @@
 
             function addNodes(graph, nodes) {
 
-                var addInterval = setInterval(function () {
-                    graph.beginUpdate();
+                graph.beginUpdate();
 
-                    for (var i in nodes) {
-                        graph.addNode(nodes[i].toLowerCase(), nodes[i]);
-                    }
+                for (var i in nodes) {
+                    graph.addNode(nodes[i].toLowerCase(), nodes[i]);
+                }
 
-                    graph.endUpdate();
-                }, 100);
+                graph.endUpdate();
             }
 
             function addLinks(graph, links) {
@@ -209,7 +208,7 @@
                   graph.forEachNode(function(node) {
                     var label = document.createElement('span');
                     label.classList.add('node-label');
-                    label.innerText = node.id;
+                    label.innerText = node.data;
                     labels[node.id] = label;
                     container.appendChild(label);
                   });
@@ -281,6 +280,10 @@
             }
 
 
+            function canonicString(str) {
+                return str.trim().toLowerCase();
+            }
+
             function loadGraph() {
 
                 gapi.client.sheets.spreadsheets.values.get({
@@ -291,14 +294,14 @@
                     var d = response.result.values;
 
                     for (var row = 1; row < d.length; row++) {
-                        window.nodes.push(d[row][0]);
+                        window.nodes.push(d[row][0].trim());
 
                         if (row === 0)
                             continue;
 
                         for (var col = 2; col < d[row].length; col++) {
-                            if (d[row][col] === "1")
-                                window.links.push([d[0][col].toLowerCase(), d[row][0].toLowerCase()]);
+                            if (canonicString(d[row][col]) === "1")
+                                window.links.push([canonicString(d[0][col]), canonicString(d[row][0])]);
                         }
                     }
                     var event = new Event('graph-loaded');
