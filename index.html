@@ -15,18 +15,39 @@
 
         <script src="/sgraph/javascripts/vivagraph.min.js"></script>
         <script src="https://apis.google.com/js/client.js?onload=checkAuth"></script>
+        <script src="https://code.jquery.com/jquery-3.0.0.min.js"></script>
 
         <style type='text/css'>
             #graphConainer {
                 position: absolute;
                 /*top: 2em;*/
-                width: 100%;
+                width: 80%;
                 height: 100%;
             }
-            
+
             #graphConainer > svg {
                 width: 100%;
                 height: 100%;
+            }
+
+            #sidebar {
+                position: absolute;
+                width: 20%;
+                z-index: 30;
+                right: 20px;
+                color: white;
+            }
+
+            #sidebar .info .mutual {
+                color: #0f0;
+            }
+
+            #sidebar .info .outgoing {
+                color: #fff;
+            }
+
+            #sidebar .info .incoming {
+                color: #f00;
             }
 
             .node-label {
@@ -46,26 +67,27 @@
 
             #top #panel {
                 color: white;
+                text-align: center;
+                widh: 100%;
             }
 
         </style>
     </head>
 
     <body onload="onLoad()" style="background-color: black;">
-        <div id="top">
+<!--        <div id="top">
             <div id="panel">Для просмотра графа нужно войти в аккаунт google, ваш браузер мог заблокировать всплывающее окно авторизации</div>
-        </div>
+        </div>-->
         <div id='graphConainer'></div>
-
-        <!--        <div id="authorize-div" style="">
-                    <span>Authorize access to Google Sheets API</span>
-                    Button for the user to click to initiate auth sequence
-                    <button id="authorize-button" onclick="handleAuthClick(event)">
-                        Authorize
-                    </button>
-                </div>
-                <pre id="output"></pre>-->
-
+        <div id="sidebar">
+            <h2 class="caption"></h2>
+            <div class="info">
+                <span>Для просмотра графа нужно войти в аккаунт google, ваш браузер мог заблокировать всплывающее окно авторизации</span>
+                <div class="mutual"></div>
+                <div class="outgoing"></div>
+                <div class="incoming"></div>
+            </div>
+        </div>
         <script type = 'text/javascript' >
             var CLIENT_ID = '857913222632-jqf7gvhgheqkitu9189iib7svv21d2rs.apps.googleusercontent.com';
             var SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
@@ -74,17 +96,30 @@
             var nodeWidth = 100;
             var nodeHeight = 20;
             var nodeColors = ['#00a233', '#991212'];
-            var linkColors = ['#606060', '#ffffff'];
+            var linkColors = [
+                0x606060ff, // default
+                0xffffffff, // outgoing
+                0xff0000ff, // incoming
+                0x00ff00ff, // mutual
+            ];
 
             document.addEventListener('graph-loaded', buildGraph, false);
+
+            eventAggregator = function(){};
 
             function buildGraph() {
                 var graph = Viva.Graph.graph();
                 var layout = Viva.Graph.Layout.forceDirected(graph, {
-                    springLength: 150,
-                    springCoeff: 0.000005,
-                    dragCoeff: 0.003,
-                    gravity: -0.3
+//                    springLength: 75,
+//                    springCoeff: 0.000001875,
+//                    dragCoeff: 0.003,
+//                    gravity: -0.3
+
+                    springLength : 150,
+                    springCoeff : 0.00001,
+                    dragCoeff : 0.05,
+                    gravity : -0.3,
+                    theta : 0.5
 
                 });
 
@@ -122,29 +157,83 @@
                         })
                         ;
 
+                eventAggregator.onNodeHovered = function (e) {
 
-//                graphics.node(function (node) {
-//                    var ui = Viva.Graph.svg('g'),
-//                            // Create SVG text element with user id as content
-//                            svgText = Viva.Graph.svg('text')
-//                            .attr('y', '+15px')
-//                            .attr('x', '+3px')
-//                            .text(node.id),
-//                            rect = Viva.Graph.svg('rect')
-//                            .attr('width', nodeWidth)
-//                            .attr('height', nodeHeight)
-//                            .attr('fill', node.data ? node.data : nodeColor);
-//                    ui.append(rect);
-//                    ui.append(svgText);
-//                    return ui;
-//                }).placeNode(function (nodeUI, pos) {
-//                    // 'g' element doesn't have convenient (x,y) attributes, instead
-//                    // we have to deal with transforms: http://www.w3.org/TR/SVG/coords.html#SVGGlobalTransformAttribute
-//                    nodeUI.attr('transform',
-//                            'translate(' +
-//                            (pos.x - nodeWidth) + ',' + (pos.y - nodeHeight) +
-//                            ')');
-//                });
+                    e = e.detail;
+                    var node = graph.getNode(e.id);
+                    if (node) {
+                        if (e.hovered) {
+
+                            colorLinks(lastHovered);
+                            lastHovered = node;
+
+                            var incoming = {};
+                            var c_out, c_in, c_mut;
+                            c_out = 0;
+                            c_in = 0;
+                            c_mut = 0;
+
+                            graph.forEachLinkedNode(node.id, function (node, link) {
+//                                console.log(link);
+                                var linkUI = graphics.getLinkUI(link.id);
+                                if (link.toId === lastHovered.id && link.fromId !== lastHovered.id) {
+                                    incoming[link.fromId] = link.id;
+                                    linkUI.color = linkColors[2];
+                                    ++c_in;
+//                                    console.log(link.id, 'now incoming');
+                                } else if(link.fromId !== link.toId) {
+                                    linkUI.color = linkColors[1];
+                                    ++c_out;
+//                                    console.log(link.id, 'now outgoing');
+                                }
+                            });
+
+//                            console.log(incoming, c_mut, c_out, c_in);
+                            
+                            graph.forEachLinkedNode(node.id, function (node, link) {
+
+                                var linkUI = graphics.getLinkUI(link.id);
+                                if (incoming.hasOwnProperty(link.toId)) {
+                                    linkUI.color = linkColors[3];
+//                                    console.log(link.id, 'now mutual');
+                                    graphics.getLinkUI(incoming[link.toId]).color = linkColors[3];
+//                                    console.log(incoming[link.toId], 'now mutual');
+                                    ++c_mut;
+                                    --c_in;
+                                    --c_out;
+                                }
+                                
+                                graphics.bringLinkToFront(linkUI);
+                            });
+
+//                            console.log(c_mut, c_out, c_in);
+
+                            if (0 > c_in) {
+                                c_in = 0;
+                            }
+
+                            $('#sidebar .caption').html(node.data);
+                            $('#sidebar .mutual').html("Виделись: " + c_mut);
+                            $('#sidebar .outgoing').html("Наблюдал из укрытия: " + c_out);
+                            $('#sidebar .incoming').html("Был под наблюдением из укрытия: " + c_in);
+
+                        } else {
+
+                            colorLinks(lastHovered);
+                            lastHovered = null;
+
+                            colorLinks(node);
+
+                            $('#sidebar .caption').html('');
+                            $('#sidebar .mutual').html('');
+                            $('#sidebar .outgoing').html('');
+                            $('#sidebar .incoming').html('');
+                        }
+
+                        renderer.rerender();
+                    }
+                };
+                document.addEventListener('node-hovered', eventAggregator.onNodeHovered, false);
 
 
                 var renderer = Viva.Graph.View.renderer(graph,
@@ -155,12 +244,26 @@
                             renderLinks: true
                         });
 
-                var events = Viva.Graph.webglInputEvents(graphics, graph);
+                var events = Viva.Graph.webglInputEvents(graphics, graph),
+                    lastHovered = null,
+
+                    colorLinks = function (node, color) {
+                        if (node && node.id) {
+                            graph.forEachLinkedNode(node.id, function (node, link) {
+                                var linkUI = graphics.getLinkUI(link.id);
+                                linkUI.color = color || linkColors[0];
+                            });
+                        }
+                    };
+                    
                 events.mouseEnter(function (node) {
 //                    console.log('Mouse entered node: ' + node.id);
                     //document.getElementById('panel').innerHTML = node.id;
+                    var e = new CustomEvent('node-hovered', {'detail': { id: node.id, hovered: true}});
+                    document.dispatchEvent(e);
                 }).mouseLeave(function (node) {
-//                    console.log('Mouse left node: ' + node.id);
+                    var e = new CustomEvent('node-hovered', {'detail': { id: node.id, hovered: false}});
+                    document.dispatchEvent(e);
                 }).dblClick(function (node) {
 //                    console.log('Double click on node: ' + node.id);
                 }).click(function (node) {
@@ -251,7 +354,7 @@
              */
             function handleAuthResult(authResult) {
                 if (authResult && !authResult.error) {
-                    document.getElementById('top').innerHTML = '';
+                    $("#sidebar .info span").html('');
                     loadSheetsApi();
                 } else {
                     handleAuthClick(null);
