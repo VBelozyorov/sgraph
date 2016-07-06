@@ -42,6 +42,11 @@
                 color: white;
             }
 
+            #sidebar .info span {
+                display: inline-block;
+                margin-bottom: 1em;
+            }
+
             #sidebar .info .mutual {
                 color: #0f0;
             }
@@ -178,17 +183,28 @@
                             c_mut = 0;
 
                             graph.forEachLinkedNode(node.id, function (node, link) {
+
+                                if(link.fromId === link.toId) {
+                                    return;
+                                }
+
 //                                console.log(link);
                                 var linkUI = graphics.getLinkUI(link.id);
-                                if (link.toId === lastHovered.id && link.fromId !== lastHovered.id) {
+
+                                if (link.toId === lastHovered.id) {
                                     incoming[link.fromId] = link.id;
                                     linkUI.color = linkColors[2];
-                                    ++c_in;
-//                                    console.log(link.id, 'now incoming');
-                                } else if(link.fromId !== link.toId) {
+                                    if (window.agentsFilled.hasOwnProperty(link.fromId)) {
+                                        ++c_in;
+//                                      console.log(link.id, 'now incoming');
+                                    }
+                                } else {
                                     linkUI.color = linkColors[1];
-                                    ++c_out;
-//                                    console.log(link.id, 'now outgoing');
+                                    if (window.agentsFilled.hasOwnProperty(link.toId)) {
+                                        ++c_out;
+//                                      console.log(link.id, 'now outgoing');
+                                    }
+
                                 }
                             });
 
@@ -217,9 +233,14 @@
                             }
 
                             $('#sidebar .caption').html(node.data);
-                            $('#sidebar .mutual').html("Виделись: " + c_mut);
-                            $('#sidebar .outgoing').html("Наблюдал из укрытия: " + c_out);
-                            $('#sidebar .incoming').html("Был под наблюдением из укрытия: " + c_in);
+
+                            if (window.agentsFilled.hasOwnProperty(node.id)) {
+                                $('#sidebar .mutual').html("Виделись: " + c_mut);
+                                $('#sidebar .outgoing').html("Наблюдал из укрытия: " + c_out);
+                                $('#sidebar .incoming').html("Был под наблюдением из укрытия: " + c_in);
+                            } else {
+                                $('#sidebar .info span').html('агент не внес информацию');
+                            }
 
                         } else {
 
@@ -229,6 +250,7 @@
                             colorLinks(node);
 
                             $('#sidebar .caption').html('');
+                            $('#sidebar .info span').html('');
                             $('#sidebar .mutual').html('');
                             $('#sidebar .outgoing').html('');
                             $('#sidebar .incoming').html('');
@@ -331,6 +353,7 @@
                 window.nodes = [];
                 window.links = [];
                 window.domLabels = [];
+                window.agentsFilled = {};
 
                 checkAuth();
 
@@ -400,11 +423,13 @@
 
                     var d = response.result.values;
 
-                    for (var row = 1; row < d.length; row++) {
-                        window.nodes.push(d[row][0].trim());
+                    var row = 0;
+                    for (var col = 2; col < d[row].length; col++) {
+                        window.agentsFilled[canonicString(d[row][col])] = d[row][col];
+                    }
 
-                        if (row === 0)
-                            continue;
+                    for (row = 1; row < d.length; row++) {
+                        window.nodes.push(d[row][0].trim());
 
                         for (var col = 2; col < d[row].length; col++) {
                             if (canonicString(d[row][col]) === "1")
