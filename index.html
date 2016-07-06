@@ -110,6 +110,7 @@
                 0xffffffff, // outgoing
                 0xff0000ff, // incoming
                 0x00ff00ff, // mutual
+                0x999999ff, // outgoing
             ];
 
             document.addEventListener('graph-loaded', buildGraph, false);
@@ -199,10 +200,13 @@
 //                                      console.log(link.id, 'now incoming');
                                     }
                                 } else {
-                                    linkUI.color = linkColors[1];
+//                                    linkUI.color = linkColors[1];
                                     if (window.agentsFilled.hasOwnProperty(link.toId)) {
+                                        linkUI.color = linkColors[1];
                                         ++c_out;
 //                                      console.log(link.id, 'now outgoing');
+                                    } else {
+                                        linkUI.color = linkColors[4];
                                     }
 
                                 }
